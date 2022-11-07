@@ -5,24 +5,74 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 
-struct EZColor4
+struct EZColor2
 {
 	unsigned char RedInt;
 	unsigned char GreenInt;
+
+	EZColor2() :
+		RedInt{ 0 },
+		GreenInt{ 0 }
+	{}
+
+	EZColor2(unsigned char r, unsigned char g) :
+		RedInt{ r },
+		GreenInt{ g }
+	{}
+
+	DirectX::XMFLOAT2 AsFloat2()
+	{
+		DirectX::XMFLOAT2 color;
+		DirectX::XMVECTOR colorVec = DirectX::XMVectorSet(
+			static_cast<float>(RedInt),
+			static_cast<float>(GreenInt),
+			0.0f,
+			0.0f);
+		DirectX::XMStoreFloat2(
+			&color,
+			DirectX::XMVectorDivide(colorVec, DirectX::XMVectorReplicate(255.0f)));
+		return color;
+	}
+};
+
+struct EZColor3 : EZColor2
+{
 	unsigned char BlueInt;
+
+	EZColor3() :
+		BlueInt{ 0 }
+	{}
+
+	EZColor3(unsigned char r, unsigned char g, unsigned char b) :
+		EZColor2(r, g),
+		BlueInt(b)
+	{}
+
+	DirectX::XMFLOAT3 AsFloat3()
+	{
+		DirectX::XMFLOAT3 color;
+		DirectX::XMVECTOR colorVec = DirectX::XMVectorSet(
+			static_cast<float>(RedInt),
+			static_cast<float>(GreenInt),
+			static_cast<float>(BlueInt),
+			0.0f);
+		DirectX::XMStoreFloat3(
+			&color,
+			DirectX::XMVectorDivide(colorVec, DirectX::XMVectorReplicate(255.0f)));
+		return color;
+	}
+};
+
+struct EZColor4 : EZColor3
+{
 	unsigned char AlphaInt;
 
 	EZColor4() :
-		RedInt{ 0 },
-		GreenInt{ 0 },
-		BlueInt{ 0 },
 		AlphaInt{ 0 }
 	{}
 
 	EZColor4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) :
-		RedInt(r),
-		GreenInt(g),
-		BlueInt(b),
+		EZColor3(r, g, b),
 		AlphaInt(a)
 	{}
 
@@ -51,6 +101,12 @@ public:
 		this->context = context;
 	}
 
+	// ReadTexture1D
+	// ReadTexture2D
+	// ReadTexture3D
+	// ReadBuffer
+	
+
 	template<typename T>
 	std::vector<T> ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, unsigned int mipLevel = 0, unsigned int arrayIndex = 0);
 
@@ -78,6 +134,10 @@ std::vector<T> EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D>
 	desc.Usage = D3D11_USAGE_STAGING;
 	desc.BindFlags = 0; // No binding for staging resource
 	desc.MiscFlags &= ~(D3D11_RESOURCE_MISC_GENERATE_MIPS); // No mip gen
+
+	// Validate size of T
+	if (sizeof(T) != BitsPerPixel(desc.Format) / 8)
+		return vec;
 
 	// Create a new texture that is readable by the CPU
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> readableTexture;
