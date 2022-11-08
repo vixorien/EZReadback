@@ -113,10 +113,6 @@ public:
 	template<typename ElementType>
 	HRESULT ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel = 0);
 
-private:
-
-	Microsoft::WRL::ComPtr<ID3D11Device> device;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
 	template<typename ElementType>
 	HRESULT ReadBuffer(ID3D11View* view, std::vector<ElementType>& results);
@@ -129,6 +125,11 @@ private:
 
 	template<typename ElementType>
 	HRESULT ReadTexture3D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0);
+
+private:
+
+	Microsoft::WRL::ComPtr<ID3D11Device> device;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
 	// Private helper for actually reading any type of resource
 	// - A bit ugly due to all the templating, but it simplifies a lot
@@ -148,7 +149,7 @@ private:
 	inline HRESULT CreateResource(void* desc, Microsoft::WRL::ComPtr<ID3D11Texture3D>& result) { return device->CreateTexture3D(static_cast<D3D11_TEXTURE3D_DESC*>(desc), 0, result.GetAddressOf()); }
 
 	// Helper for size of formats
-	size_t BitsPerPixel(DXGI_FORMAT format);
+	inline size_t BitsPerPixel(DXGI_FORMAT format);
 };
 
 template<typename ElementType>
@@ -365,9 +366,7 @@ HRESULT EZReadback::ReadResource(
 
 
 
-
-// From the DirectX tool kit!
-size_t EZReadback::BitsPerPixel(DXGI_FORMAT format)
+inline size_t EZReadback::BitsPerPixel(DXGI_FORMAT format)
 {
 	switch (format)
 	{
