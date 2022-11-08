@@ -5,94 +5,69 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 
+
+struct EZColor1
+{
+	unsigned char RedInt;
+
+	EZColor1() : RedInt{ 0 } {}
+
+	EZColor1(unsigned char r) : RedInt{ r } {}
+
+	inline float AsFloat1() { return RedInt / 255.0f; }
+};
+
 struct EZColor2
 {
 	unsigned char RedInt;
 	unsigned char GreenInt;
 
-	EZColor2() :
-		RedInt{ 0 },
-		GreenInt{ 0 }
-	{}
+	EZColor2() : RedInt{ 0 }, GreenInt{ 0 } {}
 
 	EZColor2(unsigned char r, unsigned char g) :
-		RedInt{ r },
-		GreenInt{ g }
-	{}
+		RedInt{ r }, GreenInt{ g } {}
 
-	DirectX::XMFLOAT2 AsFloat2()
-	{
-		DirectX::XMFLOAT2 color;
-		DirectX::XMVECTOR colorVec = DirectX::XMVectorSet(
-			static_cast<float>(RedInt),
-			static_cast<float>(GreenInt),
-			0.0f,
-			0.0f);
-		DirectX::XMStoreFloat2(
-			&color,
-			DirectX::XMVectorDivide(colorVec, DirectX::XMVectorReplicate(255.0f)));
-		return color;
-	}
+	inline float AsFloat1() { return RedInt / 255.0f; }
+	inline DirectX::XMFLOAT2 AsFloat2() { return DirectX::XMFLOAT2(RedInt / 255.0f, GreenInt / 255.0f); }
 };
 
-struct EZColor3 : EZColor2
+struct EZColor3
 {
+	unsigned char RedInt;
+	unsigned char GreenInt;
 	unsigned char BlueInt;
 
-	EZColor3() :
-		BlueInt{ 0 }
-	{}
+	EZColor3() : RedInt{ 0 }, GreenInt{ 0 }, BlueInt{ 0 } {}
 
 	EZColor3(unsigned char r, unsigned char g, unsigned char b) :
-		EZColor2(r, g),
-		BlueInt(b)
-	{}
+		RedInt{ r }, GreenInt{ g }, BlueInt{ b } {}
 
-	DirectX::XMFLOAT3 AsFloat3()
-	{
-		DirectX::XMFLOAT3 color;
-		DirectX::XMVECTOR colorVec = DirectX::XMVectorSet(
-			static_cast<float>(RedInt),
-			static_cast<float>(GreenInt),
-			static_cast<float>(BlueInt),
-			0.0f);
-		DirectX::XMStoreFloat3(
-			&color,
-			DirectX::XMVectorDivide(colorVec, DirectX::XMVectorReplicate(255.0f)));
-		return color;
-	}
+	inline float AsFloat1() { return RedInt / 255.0f; }
+	inline DirectX::XMFLOAT2 AsFloat2() { return DirectX::XMFLOAT2(RedInt / 255.0f, GreenInt / 255.0f); }
+	inline DirectX::XMFLOAT3 AsFloat3() { return DirectX::XMFLOAT3(RedInt / 255.0f, GreenInt / 255.0f, BlueInt / 255.0f); }
 };
 
-struct EZColor4 : EZColor3
+struct EZColor4
 {
+	unsigned char RedInt;
+	unsigned char GreenInt;
+	unsigned char BlueInt;
 	unsigned char AlphaInt;
 
-	EZColor4() :
-		AlphaInt{ 0 }
-	{}
+	EZColor4() : RedInt{ 0 }, GreenInt{ 0 }, BlueInt{ 0 }, AlphaInt{ 0 } {}
 
 	EZColor4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) :
-		EZColor3(r, g, b),
-		AlphaInt(a)
-	{}
+		RedInt{ r }, GreenInt{ g }, BlueInt{ b }, AlphaInt{ a } {}
 
-	DirectX::XMFLOAT4 AsFloat4()
-	{
-		DirectX::XMFLOAT4 color;
-		DirectX::XMVECTOR colorVec = DirectX::XMVectorSet(
-			static_cast<float>(RedInt),
-			static_cast<float>(GreenInt),
-			static_cast<float>(BlueInt),
-			static_cast<float>(AlphaInt));
-		DirectX::XMStoreFloat4(
-			&color, 
-			DirectX::XMVectorDivide(colorVec, DirectX::XMVectorReplicate(255.0f)));
-		return color;
-	}
+	inline float AsFloat1() { return RedInt / 255.0f; }
+	inline DirectX::XMFLOAT2 AsFloat2() { return DirectX::XMFLOAT2(RedInt / 255.0f, GreenInt / 255.0f); }
+	inline DirectX::XMFLOAT3 AsFloat3() { return DirectX::XMFLOAT3(RedInt / 255.0f, GreenInt / 255.0f, BlueInt / 255.0f); }
+	inline DirectX::XMFLOAT4 AsFloat4() { return DirectX::XMFLOAT4(RedInt / 255.0f, GreenInt / 255.0f, BlueInt / 255.0f, AlphaInt / 255.0f); }
 };
 
 class EZReadback
 {
+
 public:
 
 	EZReadback(Microsoft::WRL::ComPtr<ID3D11Device> device, Microsoft::WRL::ComPtr<ID3D11DeviceContext> context)
@@ -101,86 +76,300 @@ public:
 		this->context = context;
 	}
 
-	// ReadTexture1D
-	// ReadTexture2D
-	// ReadTexture3D
-	// ReadBuffer
-	
+	template<typename ElementType>
+	HRESULT ReadBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> buffer, std::vector<ElementType>& results);
 
-	template<typename T>
-	std::vector<T> ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, unsigned int mipLevel = 0, unsigned int arrayIndex = 0);
+	template<typename ElementType>
+	HRESULT ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
 
-	template<typename T>
-	std::vector<T> ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, unsigned int mipLevel = 0, unsigned int arrayIndex = 0);
+	template<typename ElementType>
+	HRESULT ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
+	template<typename ElementType>
+	HRESULT ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11Texture3D> texture, std::vector<ElementType>& results, UINT mipLevel = 0);
+
+
+
+	template<typename ElementType>
+	HRESULT ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
+	template<typename ElementType>
+	HRESULT ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
+	template<typename ElementType>
+	HRESULT ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel = 0);
+
+
+
+	template<typename ElementType>
+	HRESULT ReadBuffer(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results);
+
+	template<typename ElementType>
+	HRESULT ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
+	template<typename ElementType>
+	HRESULT ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
+	template<typename ElementType>
+	HRESULT ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel = 0);
 
 private:
 
 	Microsoft::WRL::ComPtr<ID3D11Device> device;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
 
+	template<typename ElementType>
+	HRESULT ReadBuffer(ID3D11View* view, std::vector<ElementType>& results);
+
+	template<typename ElementType>
+	HRESULT ReadTexture1D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
+	template<typename ElementType>
+	HRESULT ReadTexture2D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
+	template<typename ElementType>
+	HRESULT ReadTexture3D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0);
+
+	// Private helper for actually reading any type of resource
+	// - A bit ugly due to all the templating, but it simplifies a lot
+	template<typename ResourceType, typename DescriptionType, typename ElementType>
+	HRESULT ReadResource(
+		Microsoft::WRL::ComPtr<ResourceType> resource,
+		DescriptionType* desc,
+		size_t elementCount,
+		UINT subresourceIndex,
+		std::vector<ElementType>& results);
+
+	// Function overloads based on template type
+	inline HRESULT CreateResource(void* desc, ...) { return E_INVALIDARG; }
+	inline HRESULT CreateResource(void* desc, Microsoft::WRL::ComPtr<ID3D11Buffer>& result) { return device->CreateBuffer(static_cast<D3D11_BUFFER_DESC*>(desc), 0, result.GetAddressOf()); }
+	inline HRESULT CreateResource(void* desc, Microsoft::WRL::ComPtr<ID3D11Texture1D>& result) { return device->CreateTexture1D(static_cast<D3D11_TEXTURE1D_DESC*>(desc), 0, result.GetAddressOf()); }
+	inline HRESULT CreateResource(void* desc, Microsoft::WRL::ComPtr<ID3D11Texture2D>& result) { return device->CreateTexture2D(static_cast<D3D11_TEXTURE2D_DESC*>(desc), 0, result.GetAddressOf()); }
+	inline HRESULT CreateResource(void* desc, Microsoft::WRL::ComPtr<ID3D11Texture3D>& result) { return device->CreateTexture3D(static_cast<D3D11_TEXTURE3D_DESC*>(desc), 0, result.GetAddressOf()); }
+
+	// Helper for size of formats
 	size_t BitsPerPixel(DXGI_FORMAT format);
 };
 
-template<typename T>
-std::vector<T> EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, unsigned int mipLevel, unsigned int arrayIndex)
+template<typename ElementType>
+HRESULT EZReadback::ReadBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> buffer, std::vector<ElementType>& results)
 {
-	// Eventual return value
-	std::vector<T> vec;
+	// Grab the description and adjust it
+	D3D11_BUFFER_DESC desc;
+	buffer->GetDesc(&desc);
 
+	// Calculate buffer size
+	size_t dataCount = desc.ByteWidth / sizeof(ElementType);
+
+	// Do the readback
+	return ReadResource<ID3D11Buffer, D3D11_BUFFER_DESC, ElementType>(buffer, &desc, dataCount, 0, results);
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
+{
+	// Grab the description and adjust it
+	D3D11_TEXTURE1D_DESC desc;
+	texture->GetDesc(&desc);
+
+	// Validate size of T
+	if (sizeof(ElementType) != BitsPerPixel(desc.Format) / 8)
+		return E_INVALIDARG;
+
+	// Calculate mip size and subresource
+	size_t mipWidth = max(desc.Width >> mipLevel, 1);
+	UINT srIndex = D3D11CalcSubresource(mipLevel, arrayIndex, desc.MipLevels);
+
+	// Do the readback
+	return ReadResource<ID3D11Texture1D, D3D11_TEXTURE1D_DESC, ElementType>(
+		texture, &desc, mipWidth, srIndex, results);
+
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
+{
 	// Grab the description and adjust it
 	D3D11_TEXTURE2D_DESC desc;
 	texture->GetDesc(&desc);
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	desc.Usage = D3D11_USAGE_STAGING;
-	desc.BindFlags = 0; // No binding for staging resource
-	desc.MiscFlags &= ~(D3D11_RESOURCE_MISC_GENERATE_MIPS); // No mip gen
 
 	// Validate size of T
-	if (sizeof(T) != BitsPerPixel(desc.Format) / 8)
-		return vec;
+	if (sizeof(ElementType) != BitsPerPixel(desc.Format) / 8)
+		return E_INVALIDARG;
 
-	// Create a new texture that is readable by the CPU
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> readableTexture;
-	HRESULT create = device->CreateTexture2D(&desc, 0, readableTexture.GetAddressOf());
-	if (FAILED(create))
-		return vec;
-
-	// Copy the resource
-	context->CopyResource(readableTexture.Get(), texture.Get());
-
-	// Map the resource
-	D3D11_MAPPED_SUBRESOURCE gpu = {};
-	unsigned int subresourceIndex = D3D11CalcSubresource(mipLevel, arrayIndex, desc.MipLevels);
-	HRESULT map = context->Map(readableTexture.Get(), subresourceIndex, D3D11_MAP_READ, 0, &gpu);
-	if (FAILED(map))
-		return vec;
-
-	// Resize the vector and read into it
+	// Calculate mip size and subresource
 	size_t mipWidth = max(desc.Width >> mipLevel, 1);
 	size_t mipHeight = max(desc.Height >> mipLevel, 1);
-	vec.resize(mipWidth * mipHeight);
-	memcpy(&vec[0], gpu.pData, sizeof(T) * mipWidth * mipHeight);
+	UINT srIndex = D3D11CalcSubresource(mipLevel, arrayIndex, desc.MipLevels);
 
-	// Clean up
-	context->Unmap(readableTexture.Get(), subresourceIndex);
-	return vec;
+	// Do the readback
+	return ReadResource<ID3D11Texture2D, D3D11_TEXTURE2D_DESC, ElementType>(
+		texture, &desc, mipWidth * mipHeight, srIndex, results);
 }
 
-template<typename T>
-std::vector<T> EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, unsigned int mipLevel, unsigned int arrayIndex)
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11Texture3D> texture, std::vector<ElementType>& results, UINT mipLevel)
+{
+	// Grab the description and adjust it
+	D3D11_TEXTURE3D_DESC desc;
+	texture->GetDesc(&desc);
+
+	// Validate size of T
+	if (sizeof(ElementType) != BitsPerPixel(desc.Format) / 8)
+		return E_INVALIDARG;
+
+	// Calculate mip size and subresource
+	size_t mipWidth = max(desc.Width >> mipLevel, 1);
+	size_t mipHeight = max(desc.Height >> mipLevel, 1);
+	size_t mipDepth = max(desc.Depth >> mipLevel, 1);
+	UINT srIndex = D3D11CalcSubresource(mipLevel, 0, desc.MipLevels);
+
+	// Do the readback
+	return ReadResource<ID3D11Texture3D, D3D11_TEXTURE3D_DESC, ElementType>(
+		texture, &desc, mipWidth * mipHeight * mipDepth, srIndex, results);
+}
+
+
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
+{
+	return ReadTexture1D<ElementType>(srv.Get(), results, mipLevel, arrayIndex);
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
+{
+	return ReadTexture2D<ElementType>(srv.Get(), results, mipLevel, arrayIndex);
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel)
+{
+	return ReadTexture3D<ElementType>(srv.Get(), results, mipLevel);
+}
+
+
+
+template<typename ElementType>
+HRESULT EZReadback::ReadBuffer(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results)
+{
+	return ReadBuffer<ElementType>(uav.Get(), results);
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
+{
+	return ReadTexture1D<ElementType>(uav.Get(), results, mipLevel, arrayIndex);
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
+{
+	return ReadTexture2D<ElementType>(uav.Get(), results, mipLevel, arrayIndex);
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel)
+{
+	return ReadTexture3D<ElementType>(uav.Get(), results, mipLevel);
+}
+
+
+
+template<typename ElementType>
+HRESULT EZReadback::ReadBuffer(ID3D11View* view, std::vector<ElementType>& results)
+{
+	// Grab the underlying resource
+	Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+	view->GetResource((ID3D11Resource**)buffer.GetAddressOf());
+
+	// Use the other overload to finish the job
+	return ReadBuffer<ElementType>(buffer, results);
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture1D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
+{
+	// Grab the underlying resource
+	Microsoft::WRL::ComPtr<ID3D11Texture1D> texture;
+	view->GetResource((ID3D11Resource**)texture.GetAddressOf());
+
+	// Use the other overload to finish the job
+	return ReadTexture1D<ElementType>(texture, results, mipLevel, arrayIndex);
+}
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture2D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
 {
 	// Grab the underlying resource
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-	srv->GetResource((ID3D11Resource**)texture.GetAddressOf());
-	
+	view->GetResource((ID3D11Resource**)texture.GetAddressOf());
+
 	// Use the other overload to finish the job
-	return ReadTexture2D<T>(texture, mipLevel, arrayIndex);
+	return ReadTexture2D<ElementType>(texture, results, mipLevel, arrayIndex);
 }
+
+template<typename ElementType>
+HRESULT EZReadback::ReadTexture3D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel)
+{
+	// Grab the underlying resource
+	Microsoft::WRL::ComPtr<ID3D11Texture3D> texture;
+	view->GetResource((ID3D11Resource**)texture.GetAddressOf());
+
+	// Use the other overload to finish the job
+	return ReadTexture3D<ElementType>(texture, results, mipLevel);
+}
+
+
+template<typename ResourceType, typename DescriptionType, typename ElementType>
+HRESULT EZReadback::ReadResource(
+	Microsoft::WRL::ComPtr<ResourceType> resource, 
+	DescriptionType* desc, 
+	size_t elementCount, 
+	UINT subresourceIndex,
+	std::vector<ElementType>& results)
+{
+	// Update description for staging resource
+	desc->CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	desc->Usage          = D3D11_USAGE_STAGING;
+	desc->BindFlags      = 0; // No binding for staging resource
+	desc->MiscFlags      &= ~(D3D11_RESOURCE_MISC_GENERATE_MIPS); // No mip gen
+
+	// Create a new texture that is readable by the CPU
+	Microsoft::WRL::ComPtr<ResourceType> readable;
+	HRESULT create = CreateResource(desc, readable);
+	
+	// Make sure the resource was created
+	if (FAILED(create))
+		return create;
+
+	// Copy the resource
+	context->CopyResource(readable.Get(), resource.Get());
+
+	// Map the resource
+	D3D11_MAPPED_SUBRESOURCE gpu = {};
+	HRESULT map = context->Map(readable.Get(), subresourceIndex, D3D11_MAP_READ, 0, &gpu);
+	if (FAILED(map))
+		return map;
+
+	// Resize the vector and read into it
+	results.resize(elementCount);
+	memcpy(&results[0], gpu.pData, sizeof(ElementType) * elementCount);
+
+	// Clean up
+	context->Unmap(readable.Get(), subresourceIndex);
+	return S_OK;
+}
+
+
+
+
 
 // From the DirectX tool kit!
 size_t EZReadback::BitsPerPixel(DXGI_FORMAT format)
 {
-	switch (static_cast<int>(format))
+	switch (format)
 	{
 	case DXGI_FORMAT_R32G32B32A32_TYPELESS:
 	case DXGI_FORMAT_R32G32B32A32_FLOAT:
