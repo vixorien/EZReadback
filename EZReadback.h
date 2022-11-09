@@ -94,89 +94,19 @@ public:
 	//  - arrayIndex: array element to read for 1D/2D textures
 	// -------------------------------------------------------
 	template<typename ElementType>
-	HRESULT ReadBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> buffer, std::vector<ElementType>& results);
+	HRESULT Read(ID3D11Resource* resource, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
 
 	template<typename ElementType>
-	HRESULT ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+	HRESULT Read(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+
 
 	template<typename ElementType>
-	HRESULT ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
+	std::vector<ElementType> Read(ID3D11Resource* resource, UINT mipLevel = 0, UINT arrayIndex = 0);
+
 
 	template<typename ElementType>
-	HRESULT ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11Texture3D> texture, std::vector<ElementType>& results, UINT mipLevel = 0);
-
-
-	// --- Read functions for generic view ------------------
-	//  These overloads take a generic resource view, a reference 
-	//  to the vector to fill with data and return an HRESULT 
-	//  from D3D calls or S_OK if all D3D calls were successful.
-	// 
-	//  Note: These functions explicitly take a raw pointer as
-	//  both SRVs and UAVs inherit from ID3D11View.  Some other
-	//  functions below call these overloads for simplicity.
-	// 
-	//  - buffer/texture: the resource to read
-	//  - results: the vector to fill with data
-	//  - mipLevel: mip level to read for texture resources
-	//  - arrayIndex: array element to read for 1D/2D textures
-	// -------------------------------------------------------
-	template<typename ElementType>
-	HRESULT ReadBuffer(ID3D11View* view, std::vector<ElementType>& results);
-
-	template<typename ElementType>
-	HRESULT ReadTexture1D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
-
-	template<typename ElementType>
-	HRESULT ReadTexture2D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
-
-	template<typename ElementType>
-	HRESULT ReadTexture3D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0);
-
-
-	// --- Read functions for resource views -----------------
-	//  These overloads take an SRV to a resource, a reference 
-	//  to the vector to fill with data and return an HRESULT 
-	//  from D3D calls or S_OK if all D3D calls were successful
-	// 
-	//  - buffer/texture: the resource to read
-	//  - results: the vector to fill with data
-	//  - mipLevel: mip level to read for texture resources
-	//  - arrayIndex: array element to read for 1D/2D textures
-	// -------------------------------------------------------
-	template<typename ElementType>
-	HRESULT ReadBuffer(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results);
-
-	template<typename ElementType>
-	HRESULT ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
-
-	template<typename ElementType>
-	HRESULT ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
-
-	template<typename ElementType>
-	HRESULT ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel = 0);
-
-
-	// --- Read functions for unordered view -----------------
-	//  These overloads take a UAV to a resource, a reference 
-	//  to the vector to fill with data and return an HRESULT 
-	//  from D3D calls or S_OK if all D3D calls were successful
-	// 
-	//  - buffer/texture: the resource to read
-	//  - results: the vector to fill with data
-	//  - mipLevel: mip level to read for texture resources
-	//  - arrayIndex: array element to read for 1D/2D textures
-	// -------------------------------------------------------
-	template<typename ElementType>
-	HRESULT ReadBuffer(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results);
-
-	template<typename ElementType>
-	HRESULT ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
-
-	template<typename ElementType>
-	HRESULT ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
-
-	template<typename ElementType>
-	HRESULT ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel = 0);
+	std::vector<ElementType> Read(ID3D11View* view, UINT mipLevel = 0, UINT arrayIndex = 0);
 
 
 
@@ -189,10 +119,9 @@ private:
 	// Private helper to perform actual readback from GPU resource
 	template<typename ResourceType, typename DescriptionType, typename ElementType>
 	HRESULT ReadResource(
-		Microsoft::WRL::ComPtr<ResourceType> resource,
-		DescriptionType* desc,
-		size_t elementCount,
-		UINT subresourceIndex,
+		ResourceType* resource,
+		UINT mipLevel,
+		UINT arrayIndex,
 		std::vector<ElementType>& results);
 
 	// Function overloads based on template type
@@ -202,215 +131,101 @@ private:
 	inline HRESULT CreateResource(void* desc, Microsoft::WRL::ComPtr<ID3D11Texture2D>& result) { return device->CreateTexture2D(static_cast<D3D11_TEXTURE2D_DESC*>(desc), 0, result.GetAddressOf()); }
 	inline HRESULT CreateResource(void* desc, Microsoft::WRL::ComPtr<ID3D11Texture3D>& result) { return device->CreateTexture3D(static_cast<D3D11_TEXTURE3D_DESC*>(desc), 0, result.GetAddressOf()); }
 
+	// Helpers for calculating the number of elements in a resource
+	template<typename DescriptionType> inline UINT CalcElementCount(DescriptionType* desc, size_t elementSize, UINT mipLevel);
+	template<> inline UINT CalcElementCount<D3D11_BUFFER_DESC>(D3D11_BUFFER_DESC* desc, size_t elementSize, UINT mipLevel);
+	template<> inline UINT CalcElementCount<D3D11_TEXTURE1D_DESC>(D3D11_TEXTURE1D_DESC* desc, size_t elementSize, UINT mipLevel);
+	template<> inline UINT CalcElementCount<D3D11_TEXTURE2D_DESC>(D3D11_TEXTURE2D_DESC* desc, size_t elementSize, UINT mipLevel);
+	template<> inline UINT CalcElementCount<D3D11_TEXTURE3D_DESC>(D3D11_TEXTURE3D_DESC* desc, size_t elementSize, UINT mipLevel);
+
+	// Helpers for calculating subresource index of different resource types
+	template<typename DescriptionType> inline UINT CalcSubresourceIndex(DescriptionType* desc, UINT mipLevel, UINT arrayIndex);
+	template<> inline UINT CalcSubresourceIndex<D3D11_BUFFER_DESC>(D3D11_BUFFER_DESC* desc, UINT mipLevel, UINT arrayIndex);
+
 	// Helper for size of formats
 	inline size_t BitsPerPixel(DXGI_FORMAT format);
 };
 
 template<typename ElementType>
-HRESULT EZReadback::ReadBuffer(Microsoft::WRL::ComPtr<ID3D11Buffer> buffer, std::vector<ElementType>& results)
+HRESULT EZReadback::Read(ID3D11Resource* resource, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
 {
-	// Grab the description and adjust it
-	D3D11_BUFFER_DESC desc;
-	buffer->GetDesc(&desc);
+	D3D11_RESOURCE_DIMENSION type;
+	resource->GetType(&type);
+	switch (type)
+	{
+	case D3D11_RESOURCE_DIMENSION_BUFFER: 
+		return ReadResource<ID3D11Buffer, D3D11_BUFFER_DESC, ElementType>(static_cast<ID3D11Buffer*>(resource), mipLevel, arrayIndex, results);
 
-	// Calculate buffer size
-	size_t dataCount = desc.ByteWidth / sizeof(ElementType);
+	case D3D11_RESOURCE_DIMENSION_TEXTURE1D: 
+		return ReadResource<ID3D11Texture1D, D3D11_TEXTURE1D_DESC, ElementType>(static_cast<ID3D11Texture1D*>(resource), mipLevel, arrayIndex, results);
 
-	// Do the readback
-	return ReadResource<ID3D11Buffer, D3D11_BUFFER_DESC, ElementType>(buffer, &desc, dataCount, 0, results);
+	case D3D11_RESOURCE_DIMENSION_TEXTURE2D: 
+		return ReadResource<ID3D11Texture2D, D3D11_TEXTURE2D_DESC, ElementType>(static_cast<ID3D11Texture2D*>(resource), mipLevel, arrayIndex, results);
+
+	case D3D11_RESOURCE_DIMENSION_TEXTURE3D: 
+		return ReadResource<ID3D11Texture3D, D3D11_TEXTURE3D_DESC, ElementType>(static_cast<ID3D11Texture3D*>(resource), mipLevel, arrayIndex, results);
+	}
+
+	return E_INVALIDARG;
 }
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
-{
-	// Grab the description and adjust it
-	D3D11_TEXTURE1D_DESC desc;
-	texture->GetDesc(&desc);
-
-	// Validate size of T
-	if (sizeof(ElementType) != BitsPerPixel(desc.Format) / 8)
-		return E_INVALIDARG;
-
-	// Calculate mip size and subresource
-	size_t mipWidth = max(desc.Width >> mipLevel, 1);
-	UINT srIndex = D3D11CalcSubresource(mipLevel, arrayIndex, desc.MipLevels);
-
-	// Do the readback
-	return ReadResource<ID3D11Texture1D, D3D11_TEXTURE1D_DESC, ElementType>(
-		texture, &desc, mipWidth, srIndex, results);
-
-}
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11Texture2D> texture, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
-{
-	// Grab the description and adjust it
-	D3D11_TEXTURE2D_DESC desc;
-	texture->GetDesc(&desc);
-
-	// Validate size of T
-	if (sizeof(ElementType) != BitsPerPixel(desc.Format) / 8)
-		return E_INVALIDARG;
-
-	// Calculate mip size and subresource
-	size_t mipWidth = max(desc.Width >> mipLevel, 1);
-	size_t mipHeight = max(desc.Height >> mipLevel, 1);
-	UINT srIndex = D3D11CalcSubresource(mipLevel, arrayIndex, desc.MipLevels);
-
-	// Do the readback
-	return ReadResource<ID3D11Texture2D, D3D11_TEXTURE2D_DESC, ElementType>(
-		texture, &desc, mipWidth * mipHeight, srIndex, results);
-}
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11Texture3D> texture, std::vector<ElementType>& results, UINT mipLevel)
-{
-	// Grab the description and adjust it
-	D3D11_TEXTURE3D_DESC desc;
-	texture->GetDesc(&desc);
-
-	// Validate size of T
-	if (sizeof(ElementType) != BitsPerPixel(desc.Format) / 8)
-		return E_INVALIDARG;
-
-	// Calculate mip size and subresource
-	size_t mipWidth = max(desc.Width >> mipLevel, 1);
-	size_t mipHeight = max(desc.Height >> mipLevel, 1);
-	size_t mipDepth = max(desc.Depth >> mipLevel, 1);
-	UINT srIndex = D3D11CalcSubresource(mipLevel, 0, desc.MipLevels);
-
-	// Do the readback
-	return ReadResource<ID3D11Texture3D, D3D11_TEXTURE3D_DESC, ElementType>(
-		texture, &desc, mipWidth * mipHeight * mipDepth, srIndex, results);
-}
-
 
 
 template<typename ElementType>
-HRESULT EZReadback::ReadBuffer(ID3D11View* view, std::vector<ElementType>& results)
+HRESULT EZReadback::Read(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
 {
-	// Grab the underlying resource
-	Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
-	view->GetResource((ID3D11Resource**)buffer.GetAddressOf());
-
-	// Use the other overload to finish the job
-	return ReadBuffer<ElementType>(buffer, results);
+	ID3D11Resource* resource;
+	view->GetResource(&resource);
+	return Read(resource, results, mipLevel, arrayIndex);
 }
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture1D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
-{
-	// Grab the underlying resource
-	Microsoft::WRL::ComPtr<ID3D11Texture1D> texture;
-	view->GetResource((ID3D11Resource**)texture.GetAddressOf());
-
-	// Use the other overload to finish the job
-	return ReadTexture1D<ElementType>(texture, results, mipLevel, arrayIndex);
-}
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture2D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
-{
-	// Grab the underlying resource
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
-	view->GetResource((ID3D11Resource**)texture.GetAddressOf());
-
-	// Use the other overload to finish the job
-	return ReadTexture2D<ElementType>(texture, results, mipLevel, arrayIndex);
-}
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture3D(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel)
-{
-	// Grab the underlying resource
-	Microsoft::WRL::ComPtr<ID3D11Texture3D> texture;
-	view->GetResource((ID3D11Resource**)texture.GetAddressOf());
-
-	// Use the other overload to finish the job
-	return ReadTexture3D<ElementType>(texture, results, mipLevel);
-}
-
 
 
 template<typename ElementType>
-HRESULT EZReadback::ReadBuffer(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results)
+std::vector<ElementType> EZReadback::Read(ID3D11Resource* resource, UINT mipLevel, UINT arrayIndex)
 {
-	return ReadBuffer<ElementType>(srv.Get(), results);
+	std::vector<ElementType> data;
+	Read(resource, data, mipLevel, arrayIndex);
+	return data;
 }
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
-{
-	return ReadTexture1D<ElementType>(srv.Get(), results, mipLevel, arrayIndex);
-}
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
-{
-	return ReadTexture2D<ElementType>(srv.Get(), results, mipLevel, arrayIndex);
-}
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv, std::vector<ElementType>& results, UINT mipLevel)
-{
-	return ReadTexture3D<ElementType>(srv.Get(), results, mipLevel);
-}
-
 
 
 template<typename ElementType>
-HRESULT EZReadback::ReadBuffer(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results)
+std::vector<ElementType> EZReadback::Read(ID3D11View* view, UINT mipLevel, UINT arrayIndex)
 {
-	return ReadBuffer<ElementType>(uav.Get(), results);
+	std::vector<ElementType> data;
+	Read(view, data, mipLevel, arrayIndex);
+	return data;
 }
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture1D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
-{
-	return ReadTexture1D<ElementType>(uav.Get(), results, mipLevel, arrayIndex);
-}
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture2D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
-{
-	return ReadTexture2D<ElementType>(uav.Get(), results, mipLevel, arrayIndex);
-}
-
-template<typename ElementType>
-HRESULT EZReadback::ReadTexture3D(Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> uav, std::vector<ElementType>& results, UINT mipLevel)
-{
-	return ReadTexture3D<ElementType>(uav.Get(), results, mipLevel);
-}
-
-
-
-
 
 
 template<typename ResourceType, typename DescriptionType, typename ElementType>
 HRESULT EZReadback::ReadResource(
-	Microsoft::WRL::ComPtr<ResourceType> resource, 
-	DescriptionType* desc, 
-	size_t elementCount, 
-	UINT subresourceIndex,
+	ResourceType* resource, 
+	UINT mipLevel,
+	UINT arrayIndex,
 	std::vector<ElementType>& results)
 {
 	// Update description for staging resource
-	desc->CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	desc->Usage          = D3D11_USAGE_STAGING;
-	desc->BindFlags      = 0; // No binding for staging resource
-	desc->MiscFlags      &= ~(D3D11_RESOURCE_MISC_GENERATE_MIPS); // No mip gen
+	DescriptionType desc;
+	resource->GetDesc(&desc);
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	desc.Usage          = D3D11_USAGE_STAGING;
+	desc.BindFlags      = 0; // No binding for staging resource
+	desc.MiscFlags      &= ~(D3D11_RESOURCE_MISC_GENERATE_MIPS); // No mip gen
+
+	// Calculate the element count and subresource index
+	size_t elementCount = CalcElementCount<DescriptionType>(&desc, sizeof(ElementType), mipLevel);
+	UINT subresourceIndex = CalcSubresourceIndex(&desc, mipLevel, arrayIndex);
 
 	// Create a new texture that is readable by the CPU
 	Microsoft::WRL::ComPtr<ResourceType> readable;
-	HRESULT create = CreateResource(desc, readable);
+	HRESULT create = CreateResource(&desc, readable);
 	
 	// Make sure the resource was created
 	if (FAILED(create))
 		return create;
 
 	// Copy the resource
-	context->CopyResource(readable.Get(), resource.Get());
+	context->CopyResource(readable.Get(), resource);
 
 	// Map the resource
 	D3D11_MAPPED_SUBRESOURCE gpu = {};
@@ -427,6 +242,44 @@ HRESULT EZReadback::ReadResource(
 	return S_OK;
 }
 
+
+template<typename DescriptionType> 
+inline UINT EZReadback::CalcElementCount(DescriptionType* desc, size_t elementSize, UINT mipLevel)
+{ 
+	return 0; 
+}
+
+template<> inline UINT EZReadback::CalcElementCount<D3D11_BUFFER_DESC>(D3D11_BUFFER_DESC* desc, size_t elementSize, UINT mipLevel)
+{
+	return desc->ByteWidth / elementSize;
+}
+
+template<> inline UINT EZReadback::CalcElementCount<D3D11_TEXTURE1D_DESC>(D3D11_TEXTURE1D_DESC* desc, size_t elementSize, UINT mipLevel)
+{
+	return max(desc->Width >> mipLevel, 1);
+}
+
+template<> inline UINT EZReadback::CalcElementCount<D3D11_TEXTURE2D_DESC>(D3D11_TEXTURE2D_DESC* desc, size_t elementSize, UINT mipLevel)
+{
+	return max(desc->Width >> mipLevel, 1) * max(desc->Height >> mipLevel, 1);
+}
+
+template<> inline UINT EZReadback::CalcElementCount<D3D11_TEXTURE3D_DESC>(D3D11_TEXTURE3D_DESC* desc, size_t elementSize, UINT mipLevel)
+{
+	return max(desc->Width >> mipLevel, 1) * max(desc->Height >> mipLevel, 1) * max(desc->Depth >> mipLevel, 1);
+}
+
+
+
+template<typename DescriptionType> inline UINT EZReadback::CalcSubresourceIndex(DescriptionType* desc, UINT mipLevel, UINT arrayIndex)
+{
+	return D3D11CalcSubresource(mipLevel, arrayIndex, desc->MipLevels);
+}
+
+template<> inline UINT EZReadback::CalcSubresourceIndex<D3D11_BUFFER_DESC>(D3D11_BUFFER_DESC* desc, UINT mipLevel, UINT arrayIndex)
+{
+	return 0;
+}
 
 
 
