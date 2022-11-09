@@ -5,7 +5,14 @@
 #include <wrl/client.h>
 #include <DirectXMath.h>
 
-
+// --- EZColor1 -------------------------------------------
+//  Represents a 1-component R color, which is an 8-bit 
+//  unsigned integer in the 0-255 range. Equivalent to the 
+//  DXGI_FORMAT_R8_UNORM color format in D3D.
+//  
+//  Contains a function to convert to a float in the
+//  0.0 - 1.0 range.
+// --------------------------------------------------------
 struct EZColor1
 {
 	unsigned char RedInt;
@@ -17,6 +24,15 @@ struct EZColor1
 	inline float AsFloat1() { return RedInt / 255.0f; }
 };
 
+// --- EZColor2 -------------------------------------------
+//  Represents a 2-component RG color, where each 
+//  component is an 8-bit unsigned integer in the 0-255 
+//  range. Equivalent to the DXGI_FORMAT_R8G8_UNORM 
+//  color format in D3D.
+//  
+//  Contains functions to convert to float vectors of
+//  various sizes in which channel values are 0.0 - 1.0
+// --------------------------------------------------------
 struct EZColor2
 {
 	unsigned char RedInt;
@@ -31,6 +47,16 @@ struct EZColor2
 	inline DirectX::XMFLOAT2 AsFloat2() { return DirectX::XMFLOAT2(RedInt / 255.0f, GreenInt / 255.0f); }
 };
 
+// --- EZColor3 -------------------------------------------
+//  Represents a 3-component RGB color, where each 
+//  component is an 8-bit unsigned integer in the 0-255 
+//  range. There is no equivalent color format in D3D, but
+//  this is included for completeness as it may be useful
+//  for custom buffers.
+//  
+//  Contains functions to convert to float vectors of
+//  various sizes in which channel values are 0.0 - 1.0
+// --------------------------------------------------------
 struct EZColor3
 {
 	unsigned char RedInt;
@@ -47,6 +73,15 @@ struct EZColor3
 	inline DirectX::XMFLOAT3 AsFloat3() { return DirectX::XMFLOAT3(RedInt / 255.0f, GreenInt / 255.0f, BlueInt / 255.0f); }
 };
 
+// --- EZColor4 -------------------------------------------
+//  Represents a 4-component RGBA color, where each 
+//  component is an 8-bit unsigned integer in the 0-255 
+//  range. Equivalent to the DXGI_FORMAT_R8G8B8A8_UNORM 
+//  color format in D3D.
+//  
+//  Contains functions to convert to float vectors of
+//  various sizes in which channel values are 0.0 - 1.0
+// --------------------------------------------------------
 struct EZColor4
 {
 	unsigned char RedInt;
@@ -82,32 +117,19 @@ public:
 		this->context = context;
 	}
 
-
-	// --- Read functions for resources ----------------------
-	//  These overloads take the resource itself, a reference 
-	//  to the vector to fill with data and return an HRESULT 
-	//  from D3D calls or S_OK if all D3D calls were successful
-	// 
-	//  - buffer/texture: the resource to read
-	//  - results: the vector to fill with data
-	//  - mipLevel: mip level to read for texture resources
-	//  - arrayIndex: array element to read for 1D/2D textures
-	// -------------------------------------------------------
+	// Read functions that populate a given vector
 	template<typename ElementType>
 	HRESULT Read(ID3D11Resource* resource, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
-
 
 	template<typename ElementType>
 	HRESULT Read(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel = 0, UINT arrayIndex = 0);
 
-
+	// Read functions that return a new vector
 	template<typename ElementType>
 	std::vector<ElementType> Read(ID3D11Resource* resource, UINT mipLevel = 0, UINT arrayIndex = 0);
 
-
 	template<typename ElementType>
 	std::vector<ElementType> Read(ID3D11View* view, UINT mipLevel = 0, UINT arrayIndex = 0);
-
 
 
 private:
@@ -118,7 +140,7 @@ private:
 
 	// Private helper to perform actual readback from GPU resource
 	template<typename ResourceType, typename DescriptionType, typename ElementType>
-	HRESULT ReadResource(
+	HRESULT StageAndCopyResource(
 		ResourceType* resource,
 		UINT mipLevel,
 		UINT arrayIndex,
@@ -146,6 +168,37 @@ private:
 	inline size_t BitsPerPixel(DXGI_FORMAT format);
 };
 
+
+// --- Read functions for resources ----------------------
+//  Reads data of the specified ElementType from a 
+//  specific subresource of the given resource and 
+//  populates the given vector with results.  Note that
+//  ID3D11Buffers do not have explicit subresources and
+//  will always read the entire resource (ignoring mipLevel
+//  and arrayIndex parameters).  Likewise, ID3D11Texture3D 
+//  resources do not support arrays, so arrayIndex is ignored.
+// 
+//  ElementType:
+//  - Expected data type to read from the resource.  Note that
+//    this must match the size of the actual elements in the
+//    resource or the function will fail.
+// 
+//  Valid resource types are: 
+//  - ID3D11Buffer
+//  - ID3D11Texture1D
+//  - ID3D11Texture2D
+//  - ID3D11Texture3D
+// 
+//  Parameters:
+//  - resource: GPU resource to read
+//  - results: vector to fill with data
+//  - mipLevel: mip level to read (for texture resources)
+//  - arrayIndex: array element to read (for 1D/2D textures)
+// 
+// 	Returns:
+//  - Return value is an HRESULT from any failed D3D calls 
+//    or S_OK if all D3D calls were successful.
+// -------------------------------------------------------
 template<typename ElementType>
 HRESULT EZReadback::Read(ID3D11Resource* resource, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
 {
@@ -154,22 +207,50 @@ HRESULT EZReadback::Read(ID3D11Resource* resource, std::vector<ElementType>& res
 	switch (type)
 	{
 	case D3D11_RESOURCE_DIMENSION_BUFFER: 
-		return ReadResource<ID3D11Buffer, D3D11_BUFFER_DESC, ElementType>(static_cast<ID3D11Buffer*>(resource), mipLevel, arrayIndex, results);
+		return StageAndCopyResource<ID3D11Buffer, D3D11_BUFFER_DESC, ElementType>(static_cast<ID3D11Buffer*>(resource), mipLevel, arrayIndex, results);
 
 	case D3D11_RESOURCE_DIMENSION_TEXTURE1D: 
-		return ReadResource<ID3D11Texture1D, D3D11_TEXTURE1D_DESC, ElementType>(static_cast<ID3D11Texture1D*>(resource), mipLevel, arrayIndex, results);
+		return StageAndCopyResource<ID3D11Texture1D, D3D11_TEXTURE1D_DESC, ElementType>(static_cast<ID3D11Texture1D*>(resource), mipLevel, arrayIndex, results);
 
 	case D3D11_RESOURCE_DIMENSION_TEXTURE2D: 
-		return ReadResource<ID3D11Texture2D, D3D11_TEXTURE2D_DESC, ElementType>(static_cast<ID3D11Texture2D*>(resource), mipLevel, arrayIndex, results);
+		return StageAndCopyResource<ID3D11Texture2D, D3D11_TEXTURE2D_DESC, ElementType>(static_cast<ID3D11Texture2D*>(resource), mipLevel, arrayIndex, results);
 
 	case D3D11_RESOURCE_DIMENSION_TEXTURE3D: 
-		return ReadResource<ID3D11Texture3D, D3D11_TEXTURE3D_DESC, ElementType>(static_cast<ID3D11Texture3D*>(resource), mipLevel, arrayIndex, results);
+		return StageAndCopyResource<ID3D11Texture3D, D3D11_TEXTURE3D_DESC, ElementType>(static_cast<ID3D11Texture3D*>(resource), mipLevel, arrayIndex, results);
 	}
 
 	return E_INVALIDARG;
 }
 
 
+// --- Read functions for views ---------------------------
+//  Reads data of the specified ElementType from a 
+//  specific subresource the resource in the given view and 
+//  populates the given vector with results.  Note that
+//  ID3D11Buffers do not have explicit subresources and
+//  will always read the entire resource (ignoring mipLevel
+//  and arrayIndex parameters).  Likewise, ID3D11Texture3D 
+//  resources do not support arrays, so arrayIndex is ignored.
+// 
+//  ElementType:
+//  - Expected data type to read from the resource.  Note that
+//    this must match the size of the actual elements in the
+//    resource or the function will fail.
+// 
+//  Valid view types are: 
+//  - ID3D11ShaderResourceView
+//  - ID3D11UnorderedAccessView
+// 
+//  Parameters:
+//  - resource: GPU resource to read
+//  - results: vector to fill with data
+//  - mipLevel: mip level to read (for texture resources)
+//  - arrayIndex: array element to read (for 1D/2D textures)
+// 
+// 	Returns:
+//  - Return value is an HRESULT from any failed D3D calls 
+//    or S_OK if all D3D calls were successful.
+// -------------------------------------------------------
 template<typename ElementType>
 HRESULT EZReadback::Read(ID3D11View* view, std::vector<ElementType>& results, UINT mipLevel, UINT arrayIndex)
 {
@@ -179,6 +260,35 @@ HRESULT EZReadback::Read(ID3D11View* view, std::vector<ElementType>& results, UI
 }
 
 
+// --- Read functions for resources ----------------------
+//  Reads data of the specified ElementType from a 
+//  specific subresource of the given resource and 
+//  returns a new vector with the results.  Note that
+//  ID3D11Buffers do not have explicit subresources and
+//  will always read the entire resource (ignoring mipLevel
+//  and arrayIndex parameters).  Likewise, ID3D11Texture3D 
+//  resources do not support arrays, so arrayIndex is ignored.
+// 
+//  ElementType:
+//  - Expected data type to read from the resource.  Note that
+//    this must match the size of the actual elements in the
+//    resource or the function will fail.
+// 
+//  Valid resource types are: 
+//  - ID3D11Buffer
+//  - ID3D11Texture1D
+//  - ID3D11Texture2D
+//  - ID3D11Texture3D
+// 
+//  Parameters:
+//  - resource: GPU resource to read
+//  - mipLevel: mip level to read (for texture resources)
+//  - arrayIndex: array element to read (for 1D/2D textures)
+// 
+// 	Returns:
+//  - A new vector with the read results.  If the read 
+//    fails, the vector will be empty.
+// -------------------------------------------------------
 template<typename ElementType>
 std::vector<ElementType> EZReadback::Read(ID3D11Resource* resource, UINT mipLevel, UINT arrayIndex)
 {
@@ -188,6 +298,35 @@ std::vector<ElementType> EZReadback::Read(ID3D11Resource* resource, UINT mipLeve
 }
 
 
+// --- Read functions for resources -----------------------
+//  Reads data of the specified ElementType from a specific
+//  subresource of the resource in the given view and 
+//  returns a new vector with the results.  Note that
+//  ID3D11Buffers do not have explicit subresources and
+//  will always read the entire resource (ignoring mipLevel
+//  and arrayIndex parameters).  Likewise, ID3D11Texture3D 
+//  resources do not support arrays, so arrayIndex is ignored.
+// 
+//  ElementType:
+//  - Expected data type to read from the resource.  Note that
+//    this must match the size of the actual elements in the
+//    resource or the function will fail.
+// 
+//  Valid resource types are: 
+//  - ID3D11Buffer
+//  - ID3D11Texture1D
+//  - ID3D11Texture2D
+//  - ID3D11Texture3D
+// 
+//  Parameters:
+//  - resource: GPU resource to read
+//  - mipLevel: mip level to read (for texture resources)
+//  - arrayIndex: array element to read (for 1D/2D textures)
+// 
+// 	Returns:
+//  - A new vector with the read results.  If the read 
+//    fails, the vector will be empty.
+// --------------------------------------------------------
 template<typename ElementType>
 std::vector<ElementType> EZReadback::Read(ID3D11View* view, UINT mipLevel, UINT arrayIndex)
 {
@@ -197,8 +336,14 @@ std::vector<ElementType> EZReadback::Read(ID3D11View* view, UINT mipLevel, UINT 
 }
 
 
+
+// --- StageAndCopyResource -------------------------------
+//  Private helper function to create a staging resource
+//  for CPU readback, copy data from the specified resource
+//  and finally read the data from the GPU.
+// --------------------------------------------------------
 template<typename ResourceType, typename DescriptionType, typename ElementType>
-HRESULT EZReadback::ReadResource(
+HRESULT EZReadback::StageAndCopyResource(
 	ResourceType* resource, 
 	UINT mipLevel,
 	UINT arrayIndex,
@@ -242,47 +387,75 @@ HRESULT EZReadback::ReadResource(
 	return S_OK;
 }
 
-
+// --- CalcElementCount ----------------------------------
+//  Calculates the element count of a subresource based on
+//  the description and either the elementSize or mipLevel
+// 
+//  The default implementation returns zero as a each
+//  resource type calculates this in different ways.
+// --------------------------------------------------------
 template<typename DescriptionType> 
 inline UINT EZReadback::CalcElementCount(DescriptionType* desc, size_t elementSize, UINT mipLevel)
 { 
 	return 0; 
 }
 
+// --- CalcElementCount ----------------------------------
+//  Calculates the element count of a buffer
+// --------------------------------------------------------
 template<> inline UINT EZReadback::CalcElementCount<D3D11_BUFFER_DESC>(D3D11_BUFFER_DESC* desc, size_t elementSize, UINT mipLevel)
 {
 	return desc->ByteWidth / elementSize;
 }
 
+// --- CalcElementCount ----------------------------------
+//  Calculates the element count the specified mip of a 1D texture
+// --------------------------------------------------------
 template<> inline UINT EZReadback::CalcElementCount<D3D11_TEXTURE1D_DESC>(D3D11_TEXTURE1D_DESC* desc, size_t elementSize, UINT mipLevel)
 {
 	return max(desc->Width >> mipLevel, 1);
 }
 
+// --- CalcElementCount ----------------------------------
+//  Calculates the element count the specified mip of a 2D texture
+// --------------------------------------------------------
 template<> inline UINT EZReadback::CalcElementCount<D3D11_TEXTURE2D_DESC>(D3D11_TEXTURE2D_DESC* desc, size_t elementSize, UINT mipLevel)
 {
 	return max(desc->Width >> mipLevel, 1) * max(desc->Height >> mipLevel, 1);
 }
 
+// --- CalcElementCount ----------------------------------
+//  Calculates the element count the specified mip of a 3D texture
+// --------------------------------------------------------
 template<> inline UINT EZReadback::CalcElementCount<D3D11_TEXTURE3D_DESC>(D3D11_TEXTURE3D_DESC* desc, size_t elementSize, UINT mipLevel)
 {
 	return max(desc->Width >> mipLevel, 1) * max(desc->Height >> mipLevel, 1) * max(desc->Depth >> mipLevel, 1);
 }
 
 
-
+// --- CalcSubresourceIndex -------------------------------
+//  Calculates the subresource index for a resource with
+//  the given description.  Buffers are specifically handled
+//  with another template specialization below.
+// --------------------------------------------------------
 template<typename DescriptionType> inline UINT EZReadback::CalcSubresourceIndex(DescriptionType* desc, UINT mipLevel, UINT arrayIndex)
 {
 	return D3D11CalcSubresource(mipLevel, arrayIndex, desc->MipLevels);
 }
 
+// --- CalcSubresourceIndex -------------------------------
+//  Buffers do not contain subresources, so this always
+//  returns zero for buffers specifically.
+// --------------------------------------------------------
 template<> inline UINT EZReadback::CalcSubresourceIndex<D3D11_BUFFER_DESC>(D3D11_BUFFER_DESC* desc, UINT mipLevel, UINT arrayIndex)
 {
 	return 0;
 }
 
 
-
+// --- BitsPerPixel ---------------------------------------
+//  Returns the bits per pixel of the specified format
+// --------------------------------------------------------
 inline size_t EZReadback::BitsPerPixel(DXGI_FORMAT format)
 {
 	switch (format)
